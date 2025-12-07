@@ -2,16 +2,18 @@ const taskInput = document.getElementById('taskInput');
 const addButton = document.getElementById('addButton');
 const taskList = document.getElementById('taskList');
 const filterButtons = document.querySelectorAll('.filter-btn');
+const sortButtons = document.querySelectorAll('.sort-btn');
 
 let tasks = [];
 let currentFilter = 'все';
 let draggedTask = null;
+let currentSort = 'time';
 
 !localStorage.tasks ? tasks = [] : tasks = JSON.parse(localStorage.getItem('tasks'));
+
 const saveTasks = () => {
     localStorage.setItem('tasks', JSON.stringify(tasks))
 }
-
 
 function loadTasks(){
     const saveLocalStorage = localStorage.getItem('tasks')
@@ -35,7 +37,6 @@ function addTask() {
     };
     
     tasks.push(task);
-    
     taskInput.value = '';
     
     saveTasks();
@@ -60,7 +61,6 @@ function toggleComplete(id) {
 }
 
 function renderTasks() {
-
     taskList.innerHTML = '';
 
     if (!tasks.length) {
@@ -75,7 +75,15 @@ function renderTasks() {
         filteredTasks = tasks.filter(task => task.completed);
     }
 
-    filteredTasks.forEach(task => {
+    let sortedTasks = [...filteredTasks];
+    
+    if (currentSort === 'time') {
+        sortedTasks.sort((a, b) => b.id - a.id);
+    } else if (currentSort === 'alphabet') {
+        sortedTasks.sort((a, b) => a.text.localeCompare(b.text, 'ru'));
+    }
+
+    sortedTasks.forEach(task => {
         const li = document.createElement('li');
         li.className = 'task-item';
         li.draggable = true;
@@ -104,7 +112,6 @@ function renderTasks() {
         taskList.appendChild(li);
     });
 }
-
 
 function handleDragStart(e) {
     draggedTask = this;
@@ -142,7 +149,11 @@ function handleDragEnd() {
 
 function filterTasks(filterType) {
     currentFilter = filterType;
-    
+    renderTasks();
+}
+
+function sortTasks(sortType) {
+    currentSort = sortType;
     renderTasks();
 }
 
@@ -160,6 +171,15 @@ filterButtons.forEach(button => {
         this.classList.add('active');
         
         filterTasks(this.textContent.toLowerCase());
+    });
+});
+
+sortButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        sortButtons.forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        
+        sortTasks(this.dataset.sort);
     });
 });
 
