@@ -93,6 +93,7 @@ h1 {
     border-radius: 4px;
     border-left: 4px solid #4CAF50;
     display: flex;
+    cursor: pointer;
     justify-content: space-between;
     align-items: center;
 }
@@ -147,4 +148,51 @@ h1 {
 .sort-btn.active {
     background-color: #008CBA;
     color: white;
+}
+
+.category-select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+    margin: 0 5px;
+}
+
+
+.columns {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.column {
+    flex: 1;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 8px;
+    min-height: 400px;
+}
+
+.column h2 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.column:nth-child(1) .task-item {
+    border-left-color: #4CAF50;
+}
+
+.column:nth-child(2) .task-item {
+    border-left-color: #FF9800; 
+}
+
+.column:nth-child(3) .task-item {
+    border-left-color: #9C27B0;
+}
+
+
+.sort-buttons {
+    display: none;
 }

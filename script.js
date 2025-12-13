@@ -1,13 +1,19 @@
 const taskInput = document.getElementById('taskInput');
 const addButton = document.getElementById('addButton');
-const taskList = document.getElementById('taskList');
 const filterButtons = document.querySelectorAll('.filter-btn');
-const sortButtons = document.querySelectorAll('.sort-btn');
+const categorySelect = document.getElementById('categorySelect');
+
+const workTasksList = document.getElementById('work-tasks');
+const homeTasksList = document.getElementById('home-tasks');
+const hobbyTasksList = document.getElementById('hobby-tasks');
+
+const workColumn = document.querySelector('.column:nth-child(1)');
+const homeColumn = document.querySelector('.column:nth-child(2)');
+const hobbyColumn = document.querySelector('.column:nth-child(3)');
 
 let tasks = [];
-let currentFilter = 'все';
+let currentFilter = 'all';
 let draggedTask = null;
-let currentSort = 'time';
 
 !localStorage.tasks ? tasks = [] : tasks = JSON.parse(localStorage.getItem('tasks'));
 
@@ -24,6 +30,7 @@ function loadTasks(){
 
 function addTask() {
     const taskText = taskInput.value.trim();
+    const category = categorySelect.value;
     
     if (taskText === '') {
         alert('Введите текст задачи!');
@@ -33,6 +40,7 @@ function addTask() {
     const task = {
         id: Date.now(),
         text: taskText,
+        category: category,
         completed: false
     };
     
@@ -60,61 +68,124 @@ function toggleComplete(id) {
     renderTasks();
 }
 
+function moveTaskToCategory(taskId, newCategory) {
+    const taskIndex = tasks.findIndex(task => task.id === taskId);
+    if (taskIndex !== -1) {
+        tasks[taskIndex] = {
+            ...tasks[taskIndex],
+            category: newCategory
+        };
+        saveTasks();
+        renderTasks();
+    }
+}
+
 function renderTasks() {
-    taskList.innerHTML = '';
+    workTasksList.innerHTML = '';
+    homeTasksList.innerHTML = '';
+    hobbyTasksList.innerHTML = '';
 
     if (!tasks.length) {
-        taskList.innerHTML = '<li style="text-align: center;">Нет задач</li>';
+        workTasksList.innerHTML = '<div class="empty-placeholder">Нет задач</div>';
+        workTasksList.classList.add('empty');
         return;
     }
 
     let filteredTasks = tasks;
-    if (currentFilter === 'активные') {
+    if (currentFilter === 'active') {
         filteredTasks = tasks.filter(task => !task.completed);
-    } else if (currentFilter === 'выполненные') {
+    } else if (currentFilter === 'completed') {
         filteredTasks = tasks.filter(task => task.completed);
     }
 
-    let sortedTasks = [...filteredTasks];
-    
-    if (currentSort === 'time') {
-        sortedTasks.sort((a, b) => b.id - a.id);
-    } else if (currentSort === 'alphabet') {
-        sortedTasks.sort((a, b) => a.text.localeCompare(b.text, 'ru'));
-    }
+    const workTasks = filteredTasks.filter(task => task.category === 'work');
+    const homeTasks = filteredTasks.filter(task => task.category === 'home');
+    const hobbyTasks = filteredTasks.filter(task => task.category === 'hobby');
 
-    sortedTasks.forEach(task => {
-        const li = document.createElement('li');
-        li.className = 'task-item';
-        li.draggable = true;
-        li.dataset.id = task.id;
+    renderTasksToColumn(workTasks, workTasksList, 'work');
+    renderTasksToColumn(homeTasks, homeTasksList, 'home');
+    renderTasksToColumn(hobbyTasks, hobbyTasksList, 'hobby');
+    
+    addColumnDragHandlers();
+}
+
+function renderTasksToColumn(tasksArray, columnElement, category) {
+    if (tasksArray.length === 0) {
+        columnElement.classList.add('empty');
+        const placeholder = document.createElement('div');
+        placeholder.className = 'empty-placeholder';
+        placeholder.textContent = 'Перетащите задачу сюда';
+        placeholder.dataset.category = category;
+        columnElement.appendChild(placeholder);
+    } else {
+        columnElement.classList.remove('empty');
+        tasksArray.forEach(task => {
+            const li = createTaskElement(task);
+            columnElement.appendChild(li);
+        });
+    }
+}
+
+function createTaskElement(task) {
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.draggable = true;
+    li.dataset.id = task.id;
+    li.dataset.category = task.category;
+    
+    li.addEventListener('dragstart', handleDragStart);
+    li.addEventListener('dragover', handleDragOver);
+    li.addEventListener('drop', handleDrop);
+    li.addEventListener('dragend', handleDragEnd);
+    
+    if (task.completed) {
+        li.style.opacity = '0.6';
+        li.style.textDecoration = 'line-through';
+    }
+    
+    li.innerHTML = `
+        <span class="task-text">${task.text}</span>
+        <div class="task-actions">
+            <button class="complete-btn" onclick="toggleComplete(${task.id})">
+                ${task.completed ? 'Undo' : 'Done'}
+            </button>
+            <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+        </div>
+    `;
+    
+    return li;
+}
+
+function addColumnDragHandlers() {
+    const columns = [
+        { element: workColumn, category: 'work' },
+        { element: homeColumn, category: 'home' },
+        { element: hobbyColumn, category: 'hobby' }
+    ];
+    
+    columns.forEach(col => {
+        col.element.ondragover = null;
+        col.element.ondrop = null;
         
-        li.addEventListener('dragstart', handleDragStart);
-        li.addEventListener('dragover', handleDragOver);
-        li.addEventListener('drop', handleDrop);
-        li.addEventListener('dragend', handleDragEnd);
+        col.element.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
         
-        if (task.completed) {
-            li.style.opacity = '0.6';
-            li.style.textDecoration = 'line-through';
-        }
-        
-        li.innerHTML = `
-            <span class="task-text">${task.text}</span>
-            <div class="task-actions">
-                <button class="complete-btn" onclick="toggleComplete(${task.id})">
-                    ${task.completed ? 'Undo' : 'Done'}
-                </button>
-                <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
-            </div>
-        `;
-        
-        taskList.appendChild(li);
+        col.element.addEventListener('drop', function(e) {
+            e.preventDefault();
+            if (draggedTask && draggedTask.id) {
+                moveTaskToCategory(draggedTask.id, col.category);
+            }
+        });
     });
 }
 
 function handleDragStart(e) {
-    draggedTask = this;
+    draggedTask = {
+        element: this,
+        id: parseInt(this.dataset.id)
+    };
     this.style.opacity = '0.4';
     e.dataTransfer.effectAllowed = 'move';
 }
@@ -127,33 +198,33 @@ function handleDragOver(e) {
 
 function handleDrop(e) {
     e.preventDefault();
-    if (draggedTask !== this) {
-        const fromId = parseInt(draggedTask.dataset.id);
-        const toId = parseInt(this.dataset.id);
+    
+    if (draggedTask && draggedTask.id) {
+        let targetCategory;
         
-        const fromIndex = tasks.findIndex(task => task.id === fromId);
-        const toIndex = tasks.findIndex(task => task.id === toId);
+        if (this.classList.contains('task-item')) {
+            targetCategory = this.dataset.category;
+        }
+        else if (this.classList.contains('empty-placeholder')) {
+            targetCategory = this.dataset.category;
+        }
         
-        [tasks[fromIndex], tasks[toIndex]] = [tasks[toIndex], tasks[fromIndex]];
-        
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-        renderTasks();
+        if (targetCategory) {
+            moveTaskToCategory(draggedTask.id, targetCategory);
+        }
     }
     return false;
 }
 
 function handleDragEnd() {
-    this.style.opacity = '1';
+    if (draggedTask && draggedTask.element) {
+        draggedTask.element.style.opacity = '1';
+    }
     draggedTask = null;
 }
 
 function filterTasks(filterType) {
     currentFilter = filterType;
-    renderTasks();
-}
-
-function sortTasks(sortType) {
-    currentSort = sortType;
     renderTasks();
 }
 
@@ -169,17 +240,7 @@ filterButtons.forEach(button => {
     button.addEventListener('click', function() {
         filterButtons.forEach(btn => btn.classList.remove('active'));
         this.classList.add('active');
-        
-        filterTasks(this.textContent.toLowerCase());
-    });
-});
-
-sortButtons.forEach(button => {
-    button.addEventListener('click', function() {
-        sortButtons.forEach(btn => btn.classList.remove('active'));
-        this.classList.add('active');
-        
-        sortTasks(this.dataset.sort);
+        filterTasks(this.dataset.filter);
     });
 });
 

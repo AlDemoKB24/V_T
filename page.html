@@ -4,31 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do List</title>
-    <link rel = "stylesheet" href = "style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-    
         <h1>To-Do List</h1>
         
         <div class="input-section">
-            <input type="text" class = "taskInput" id="taskInput" placeholder="Введите новую задачу...">
+            <input type="text" class="taskInput" id="taskInput" placeholder="Введите новую задачу...">
+            
+            <select id="categorySelect" class="category-select">
+                <option value="work">Работа</option>
+                <option value="home">Дом</option>
+                <option value="hobby">Хобби</option>
+            </select>
+            
             <button id="addButton">+</button>
         </div>
         
         <div class="filters">
-            <button class="filter-btn active">Все</button>
-            <button class="filter-btn">Активные</button>
-            <button class="filter-btn">Выполненные</button>
+            <button class="filter-btn active" data-filter="all">Все</button>
+            <button class="filter-btn" data-filter="active">Активные</button>
+            <button class="filter-btn" data-filter="completed">Выполненные</button>
         </div>
-        
-        <div class="sort-buttons">
-            <button class="sort-btn" data-sort="time">По времени</button>
-            <button class="sort-btn" data-sort="alphabet">По алфавиту</button>
+        <div class="columns">
+            <div class="column">
+                <h2>Работа</h2>
+                <ul class="task-list" id="work-tasks"></ul>
+            </div>
+            
+            <div class="column">
+                <h2>Дом</h2>
+                <ul class="task-list" id="home-tasks"></ul>
+            </div>
+            
+            <div class="column">
+                <h2>Хобби</h2>
+                <ul class="task-list" id="hobby-tasks"></ul>
+            </div>
         </div>
-        
-        <ul class="task-list" id="taskList">
-        </ul>
     </div>
     <script src="script.js"></script>
 </body>
