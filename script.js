@@ -174,7 +174,7 @@ function addColumnDragHandlers() {
         
         col.element.addEventListener('drop', function(e) {
             e.preventDefault();
-            if (draggedTask && draggedTask.id) {
+            if (draggedTask) {
                 moveTaskToCategory(draggedTask.id, col.category);
             }
         });
@@ -199,7 +199,7 @@ function handleDragOver(e) {
 function handleDrop(e) {
     e.preventDefault();
     
-    if (draggedTask && draggedTask.id) {
+    if (draggedTask) {
         let targetCategory;
         
         if (this.classList.contains('task-item')) {
@@ -217,7 +217,7 @@ function handleDrop(e) {
 }
 
 function handleDragEnd() {
-    if (draggedTask && draggedTask.element) {
+    if (draggedTask) {
         draggedTask.element.style.opacity = '1';
     }
     draggedTask = null;
